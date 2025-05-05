@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -61,6 +62,17 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
+				},
+				code: {
+					DEFAULT: '#1e1e1e',
+					foreground: '#d4d4d4',
+					comment: '#6a9955',
+					string: '#ce9178',
+					keyword: '#569cd6',
+					function: '#dcdcaa',
+					variable: '#9cdcfe',
+					number: '#b5cea8',
+					type: '#4ec9b0',
 				}
 			},
 			borderRadius: {
@@ -84,11 +96,32 @@ export default {
 					to: {
 						height: '0'
 					}
+				},
+				'pulse': {
+					'0%, 100%': {
+						opacity: '1'
+					},
+					'50%': {
+						opacity: '0.5'
+					}
+				},
+				'typing': {
+					from: {
+						width: '0'
+					},
+					to: {
+						width: '100%'
+					}
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
-				'accordion-up': 'accordion-up 0.2s ease-out'
+				'accordion-up': 'accordion-up 0.2s ease-out',
+				'pulse': 'pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+				'typing': 'typing 1.5s steps(40, end) infinite'
+			},
+			fontFamily: {
+				mono: ['JetBrains Mono', 'monospace']
 			}
 		}
 	},
