@@ -1,9 +1,8 @@
-
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
-import { X } from 'lucide-react';
+import { X, Sparkles } from 'lucide-react';
 
 import Sidebar from '@/components/Sidebar';
 import FileExplorer, { FileNode } from '@/components/FileExplorer';
@@ -11,6 +10,8 @@ import CodeEditor from '@/components/CodeEditor';
 import PromptInput from '@/components/PromptInput';
 import ResponseDisplay from '@/components/ResponseDisplay';
 import ProjectAnalytics from '@/components/ProjectAnalytics';
+import ProjectIndexer from '@/components/ProjectIndexer';
+import MCPServerManager from '@/components/MCPServerManager';
 import { processPrompt, getProjectStats } from '@/services/ollamaService';
 
 const Index = () => {
@@ -373,12 +374,19 @@ Provide a prompt describing what you want to do with your codebase, and the agen
       description: "This feature would execute the selected file.",
     });
   };
+  
+  const handleIndexComplete = (indexedFiles: FileNode[]) => {
+    // In a real implementation, we would merge with existing files or replace them
+    // For demo purposes, we'll just add them to the existing files
+    setFiles(prevFiles => [...prevFiles, ...indexedFiles]);
+  };
 
   return (
     <div className="h-screen w-screen flex flex-col">
       <header className="bg-sidebar-border h-12 border-b border-sidebar-border flex items-center px-4">
         <h1 className="text-lg font-semibold flex items-center">
           <span className="text-primary mr-1">Ollama</span> Agent
+          <Sparkles className="h-4 w-4 text-accent ml-2" />
         </h1>
       </header>
       
@@ -413,8 +421,18 @@ Provide a prompt describing what you want to do with your codebase, and the agen
                   understanding the system architecture, and implementing improvements based on your prompts.
                 </p>
                 
+                {/* Project Indexer section */}
+                <div className="mb-6">
+                  <ProjectIndexer onIndexComplete={handleIndexComplete} />
+                </div>
+                
+                {/* MCP Server Manager section */}
+                <div className="mb-6">
+                  <MCPServerManager />
+                </div>
+                
                 <div className="grid grid-cols-1 gap-6 md:grid-cols-2 mb-6">
-                  <div className="border border-border rounded-lg p-4">
+                  <div className="glass-card p-4">
                     <h3 className="text-lg font-medium mb-2">Getting Started</h3>
                     <ol className="list-decimal list-inside space-y-2 text-sm">
                       <li>Explore your project files in the left sidebar</li>
@@ -424,19 +442,19 @@ Provide a prompt describing what you want to do with your codebase, and the agen
                     </ol>
                   </div>
                   
-                  <div className="border border-border rounded-lg p-4">
+                  <div className="glass-card p-4">
                     <h3 className="text-lg font-medium mb-2">Quick Actions</h3>
                     <div className="grid grid-cols-2 gap-2">
-                      <Button variant="outline" size="sm" className="justify-start" onClick={() => setActiveTab('explorer')}>
+                      <Button variant="outline" size="sm" className="justify-start modern-button" onClick={() => setActiveTab('explorer')}>
                         Explore Project
                       </Button>
-                      <Button variant="outline" size="sm" className="justify-start" onClick={() => setActiveTab('editor')}>
+                      <Button variant="outline" size="sm" className="justify-start modern-button" onClick={() => setActiveTab('editor')}>
                         Edit Code
                       </Button>
-                      <Button variant="outline" size="sm" className="justify-start" onClick={() => setActiveTab('analytics')}>
+                      <Button variant="outline" size="sm" className="justify-start modern-button" onClick={() => setActiveTab('analytics')}>
                         View Analytics
                       </Button>
-                      <Button variant="outline" size="sm" className="justify-start" onClick={() => setActiveTab('settings')}>
+                      <Button variant="outline" size="sm" className="justify-start modern-button" onClick={() => setActiveTab('settings')}>
                         Settings
                       </Button>
                     </div>
@@ -466,9 +484,16 @@ Provide a prompt describing what you want to do with your codebase, and the agen
             {activeTab === 'settings' && (
               <div className="flex-1 p-6 overflow-y-auto">
                 <h2 className="text-xl font-bold mb-4">Settings</h2>
-                <p className="text-muted-foreground">
-                  Configure the Ollama Agent settings here. This is a placeholder for the settings UI.
-                </p>
+                
+                <div className="glass-card p-4 mb-6">
+                  <h3 className="text-lg font-medium mb-4">MCP Server Configuration</h3>
+                  <MCPServerManager />
+                </div>
+                
+                <div className="glass-card p-4">
+                  <h3 className="text-lg font-medium mb-4">Project Indexing</h3>
+                  <ProjectIndexer onIndexComplete={handleIndexComplete} />
+                </div>
               </div>
             )}
           </div>
@@ -485,9 +510,9 @@ Provide a prompt describing what you want to do with your codebase, and the agen
       </footer>
       
       <Dialog open={showWelcomeDialog} onOpenChange={setShowWelcomeDialog}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md glass-card">
           <DialogHeader>
-            <DialogTitle>Welcome to Ollama Agent</DialogTitle>
+            <DialogTitle className="text-xl">Welcome to Ollama Agent</DialogTitle>
             <DialogDescription>
               An intelligent AI assistant for code development
             </DialogDescription>
@@ -508,10 +533,19 @@ Provide a prompt describing what you want to do with your codebase, and the agen
                 <li>Implement a REST API for the existing data models</li>
               </ul>
             </div>
+            
+            <div className="bg-muted/50 p-3 rounded-md text-sm">
+              <p className="font-medium">New Features:</p>
+              <ul className="list-disc list-inside space-y-1 mt-2">
+                <li>Project Indexing - Scan your entire project structure</li>
+                <li>MCP Server Management - Connect to multiple servers</li>
+                <li>Modern UI - Improved layout and typography</li>
+              </ul>
+            </div>
           </div>
           
           <div className="flex justify-end">
-            <Button onClick={() => setShowWelcomeDialog(false)}>
+            <Button onClick={() => setShowWelcomeDialog(false)} className="modern-button">
               Get Started
             </Button>
           </div>

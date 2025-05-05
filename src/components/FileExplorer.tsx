@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { FolderTree, File, ChevronRight, ChevronDown, FileText, Folder } from 'lucide-react';
+import { FolderTree, ChevronRight, ChevronDown, FileText, Folder, File } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export interface FileNode {
@@ -39,26 +39,40 @@ const FileExplorerItem: React.FC<{
   
   const isSelected = selectedFileId === node.id;
   
+  const getFileIcon = () => {
+    if (node.type === 'file') {
+      const extension = node.name.split('.').pop()?.toLowerCase();
+      if (extension === 'js' || extension === 'jsx') return <FileText size={16} className="text-yellow-500" />;
+      if (extension === 'ts' || extension === 'tsx') return <FileText size={16} className="text-blue-500" />;
+      if (extension === 'css' || extension === 'scss') return <FileText size={16} className="text-pink-500" />;
+      if (extension === 'html') return <FileText size={16} className="text-orange-500" />;
+      if (extension === 'json') return <FileText size={16} className="text-green-500" />;
+      if (extension === 'md') return <FileText size={16} className="text-white" />;
+      return <File size={16} className="text-foreground" />;
+    }
+    return <Folder size={16} className="text-primary" />;
+  };
+  
   return (
     <div className="w-full">
       <div 
         onClick={node.type === 'folder' ? toggleExpand : handleFileClick}
         className={cn(
-          "flex items-center py-1 px-2 hover:bg-muted/50 cursor-pointer rounded transition-colors text-sm",
-          isSelected && "bg-primary/20 hover:bg-primary/20",
+          "flex items-center py-1.5 px-2 hover:bg-muted/50 cursor-pointer rounded-md transition-colors text-sm",
+          isSelected && "bg-primary/20 hover:bg-primary/30",
           `pl-${level * 4 + 2}`
         )}
         style={{ paddingLeft: `${level * 12 + 8}px` }}
       >
-        <div className="mr-1 flex items-center">
+        <div className="mr-1 flex items-center w-4">
           {node.type === 'folder' ? (
-            isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />
+            isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />
           ) : null}
         </div>
         <div className="mr-2">
-          {node.type === 'folder' ? <Folder size={16} className="text-primary" /> : <FileText size={16} className="text-foreground" />}
+          {getFileIcon()}
         </div>
-        <span>{node.name}</span>
+        <span className="truncate">{node.name}</span>
       </div>
       
       {node.type === 'folder' && isExpanded && node.children && (
@@ -81,7 +95,7 @@ const FileExplorerItem: React.FC<{
 const FileExplorer: React.FC<FileExplorerProps> = ({ files, onFileSelect, selectedFileId }) => {
   return (
     <div className="w-full h-full bg-sidebar p-2 overflow-y-auto">
-      <div className="flex items-center mb-3 px-2">
+      <div className="flex items-center mb-3 px-2 py-2">
         <FolderTree size={16} className="mr-2 text-primary" />
         <h2 className="font-semibold text-sm">Project Files</h2>
       </div>

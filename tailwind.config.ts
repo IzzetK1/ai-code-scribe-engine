@@ -19,6 +19,10 @@ export default {
 			}
 		},
 		extend: {
+			fontFamily: {
+				sans: ['Inter', 'system-ui', 'sans-serif'],
+				mono: ['JetBrains Mono', 'monospace'],
+			},
 			colors: {
 				border: 'hsl(var(--border))',
 				input: 'hsl(var(--input))',
@@ -112,16 +116,18 @@ export default {
 					to: {
 						width: '100%'
 					}
+				},
+				'shimmer': {
+					'0%': { backgroundPosition: '-100% 0' },
+					'100%': { backgroundPosition: '200% 0' }
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
 				'accordion-up': 'accordion-up 0.2s ease-out',
 				'pulse': 'pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-				'typing': 'typing 1.5s steps(40, end) infinite'
-			},
-			fontFamily: {
-				mono: ['JetBrains Mono', 'monospace']
+				'typing': 'typing 1.5s steps(40, end) infinite',
+				'shimmer': 'shimmer 2s linear infinite'
 			}
 		}
 	},
