@@ -3,15 +3,17 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import { X, Sparkles } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import Sidebar from '@/components/Sidebar';
 import FileExplorer, { FileNode } from '@/components/FileExplorer';
-import CodeEditor from '@/components/CodeEditor';
+import MonacoEditor from '@/components/MonacoEditor';
 import PromptInput from '@/components/PromptInput';
 import ResponseDisplay from '@/components/ResponseDisplay';
 import ProjectAnalytics from '@/components/ProjectAnalytics';
 import ProjectIndexer from '@/components/ProjectIndexer';
 import MCPServerManager from '@/components/MCPServerManager';
+import Terminal from '@/components/Terminal';
 import { processPrompt, getProjectStats } from '@/services/ollamaService';
 
 const Index = () => {
@@ -27,6 +29,7 @@ const Index = () => {
     status: 'pending' | 'complete' | 'error';
     output?: string;
   }>>([]);
+  const [outputTab, setOutputTab] = useState<'response' | 'terminal'>('response');
   
   const [stats, setStats] = useState({
     totalFiles: 0,
@@ -415,7 +418,7 @@ Provide a prompt describing what you want to do with your codebase, and the agen
           <div className="flex-1 flex flex-col overflow-hidden">
             {activeTab === 'home' && (
               <div className="flex-1 p-6 overflow-y-auto">
-                <h2 className="text-2xl font-bold mb-6">Welcome to Ollama Agent</h2>
+                <h2 className="text-2xl font-bold mb-6 font-playfair">Welcome to Ollama Agent</h2>
                 <p className="mb-4">
                   This intelligent agent helps you develop your codebase by analyzing your project structure,
                   understanding the system architecture, and implementing improvements based on your prompts.
@@ -433,7 +436,7 @@ Provide a prompt describing what you want to do with your codebase, and the agen
                 
                 <div className="grid grid-cols-1 gap-6 md:grid-cols-2 mb-6">
                   <div className="glass-card p-4">
-                    <h3 className="text-lg font-medium mb-2">Getting Started</h3>
+                    <h3 className="text-lg font-medium mb-2 font-playfair">Getting Started</h3>
                     <ol className="list-decimal list-inside space-y-2 text-sm">
                       <li>Explore your project files in the left sidebar</li>
                       <li>Use the prompt input at the bottom to describe what you want to do</li>
@@ -443,7 +446,7 @@ Provide a prompt describing what you want to do with your codebase, and the agen
                   </div>
                   
                   <div className="glass-card p-4">
-                    <h3 className="text-lg font-medium mb-2">Quick Actions</h3>
+                    <h3 className="text-lg font-medium mb-2 font-playfair">Quick Actions</h3>
                     <div className="grid grid-cols-2 gap-2">
                       <Button variant="outline" size="sm" className="justify-start modern-button" onClick={() => setActiveTab('explorer')}>
                         Explore Project
@@ -467,7 +470,7 @@ Provide a prompt describing what you want to do with your codebase, and the agen
             
             {activeTab === 'editor' && (
               <div className="flex-1 overflow-hidden">
-                <CodeEditor 
+                <MonacoEditor 
                   file={selectedFile}
                   onContentChange={handleContentChange}
                 />
@@ -476,31 +479,52 @@ Provide a prompt describing what you want to do with your codebase, and the agen
             
             {activeTab === 'analytics' && (
               <div className="flex-1 p-6 overflow-y-auto">
-                <h2 className="text-xl font-bold mb-4">Project Analytics</h2>
+                <h2 className="text-xl font-bold mb-4 font-playfair">Project Analytics</h2>
                 <ProjectAnalytics stats={stats} />
               </div>
             )}
             
             {activeTab === 'settings' && (
               <div className="flex-1 p-6 overflow-y-auto">
-                <h2 className="text-xl font-bold mb-4">Settings</h2>
+                <h2 className="text-xl font-bold mb-4 font-playfair">Settings</h2>
                 
                 <div className="glass-card p-4 mb-6">
-                  <h3 className="text-lg font-medium mb-4">MCP Server Configuration</h3>
+                  <h3 className="text-lg font-medium mb-4 font-playfair">MCP Server Configuration</h3>
                   <MCPServerManager />
                 </div>
                 
                 <div className="glass-card p-4">
-                  <h3 className="text-lg font-medium mb-4">Project Indexing</h3>
+                  <h3 className="text-lg font-medium mb-4 font-playfair">Project Indexing</h3>
                   <ProjectIndexer onIndexComplete={handleIndexComplete} />
                 </div>
+              </div>
+            )}
+            
+            {activeTab === 'terminal' && (
+              <div className="flex-1 overflow-hidden p-2">
+                <Terminal />
               </div>
             )}
           </div>
           
           {/* Right panel - Response/Output */}
           <div className="w-96 border-l border-border flex flex-col">
-            <ResponseDisplay response={response} actions={actions} />
+            <Tabs value={outputTab} onValueChange={(val) => setOutputTab(val as 'response' | 'terminal')} className="flex-1 flex flex-col overflow-hidden">
+              <div className="border-b border-border">
+                <TabsList className="bg-transparent">
+                  <TabsTrigger value="response">Response</TabsTrigger>
+                  <TabsTrigger value="terminal">Terminal</TabsTrigger>
+                </TabsList>
+              </div>
+              
+              <TabsContent value="response" className="flex-1 overflow-hidden">
+                <ResponseDisplay response={response} actions={actions} />
+              </TabsContent>
+              
+              <TabsContent value="terminal" className="flex-1 overflow-hidden p-2">
+                <Terminal />
+              </TabsContent>
+            </Tabs>
           </div>
         </div>
       </main>
@@ -512,7 +536,7 @@ Provide a prompt describing what you want to do with your codebase, and the agen
       <Dialog open={showWelcomeDialog} onOpenChange={setShowWelcomeDialog}>
         <DialogContent className="sm:max-w-md glass-card">
           <DialogHeader>
-            <DialogTitle className="text-xl">Welcome to Ollama Agent</DialogTitle>
+            <DialogTitle className="text-xl font-playfair">Welcome to Ollama Agent</DialogTitle>
             <DialogDescription>
               An intelligent AI assistant for code development
             </DialogDescription>
@@ -539,7 +563,8 @@ Provide a prompt describing what you want to do with your codebase, and the agen
               <ul className="list-disc list-inside space-y-1 mt-2">
                 <li>Project Indexing - Scan your entire project structure</li>
                 <li>MCP Server Management - Connect to multiple servers</li>
-                <li>Modern UI - Improved layout and typography</li>
+                <li>Monaco Editor - Advanced code editing capabilities</li>
+                <li>Terminal - Command-line interface for project interaction</li>
               </ul>
             </div>
           </div>
