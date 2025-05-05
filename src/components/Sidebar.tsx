@@ -5,8 +5,9 @@ import { cn } from '@/lib/utils';
 import { 
   Home, FolderTree, Code2, 
   BarChart2, Settings, Plus, Trash2, 
-  Save, Play, History
+  Save, Play, History, Terminal
 } from 'lucide-react';
+import { useToast } from '@/components/ui/use-toast';
 
 interface SidebarProps {
   activeTab: string;
@@ -27,13 +28,37 @@ const Sidebar: React.FC<SidebarProps> = ({
   onRunCode,
   selectedFileId
 }) => {
+  const { toast } = useToast();
+  
   const navItems = [
     { id: 'home', icon: <Home size={20} />, label: 'Home' },
     { id: 'explorer', icon: <FolderTree size={20} />, label: 'Explorer' },
     { id: 'editor', icon: <Code2 size={20} />, label: 'Editor' },
     { id: 'analytics', icon: <BarChart2 size={20} />, label: 'Analytics' },
+    { id: 'terminal', icon: <Terminal size={20} />, label: 'Terminal' },
     { id: 'settings', icon: <Settings size={20} />, label: 'Settings' }
   ];
+  
+  const handleRunCode = () => {
+    if (!selectedFileId) {
+      toast({
+        title: "No file selected",
+        description: "Please select a file to run.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    onRunCode();
+  };
+  
+  const handleSaveChanges = () => {
+    onSaveChanges();
+    toast({
+      title: "Changes saved",
+      description: "Your changes have been saved successfully.",
+    });
+  };
 
   return (
     <div className="h-full flex flex-col w-16 bg-sidebar border-r border-sidebar-border">
@@ -86,7 +111,7 @@ const Sidebar: React.FC<SidebarProps> = ({
           variant="ghost"
           size="icon"
           className="h-10 w-10 rounded-md"
-          onClick={onSaveChanges}
+          onClick={handleSaveChanges}
           title="Save Changes"
         >
           <Save size={20} />
@@ -99,7 +124,7 @@ const Sidebar: React.FC<SidebarProps> = ({
             "h-10 w-10 rounded-md",
             !selectedFileId && "opacity-50 cursor-not-allowed"
           )}
-          onClick={onRunCode}
+          onClick={handleRunCode}
           disabled={!selectedFileId}
           title="Run Code"
         >

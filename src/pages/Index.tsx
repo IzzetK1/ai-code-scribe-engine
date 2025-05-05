@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState, useEffect, useRef } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
@@ -13,7 +14,7 @@ import ResponseDisplay from '@/components/ResponseDisplay';
 import ProjectAnalytics from '@/components/ProjectAnalytics';
 import ProjectIndexer from '@/components/ProjectIndexer';
 import MCPServerManager from '@/components/MCPServerManager';
-import Terminal from '@/components/Terminal';
+import Terminal, { TerminalRef } from '@/components/Terminal';
 import { processPrompt, getProjectStats } from '@/services/ollamaService';
 
 const Index = () => {
@@ -30,6 +31,7 @@ const Index = () => {
     output?: string;
   }>>([]);
   const [outputTab, setOutputTab] = useState<'response' | 'terminal'>('response');
+  const terminalRef = useRef<TerminalRef>(null);
   
   const [stats, setStats] = useState({
     totalFiles: 0,
@@ -305,6 +307,8 @@ Provide a prompt describing what you want to do with your codebase, and the agen
 
   const handlePromptSubmit = async (prompt: string) => {
     setIsProcessing(true);
+    setOutputTab('response');
+    
     try {
       const result = await processPrompt(prompt, files);
       setResponse(result.response);
@@ -346,23 +350,84 @@ Provide a prompt describing what you want to do with your codebase, and the agen
   }
 
   const handleNewFile = () => {
-    // This would show a dialog to create a new file in a real implementation
-    toast({
-      title: "Create New File",
-      description: "This feature would allow you to create a new file.",
-    });
+    const createNewFile = (parentFolderId: string | null = null) => {
+      const newFileId = `file-${Date.now()}`;
+      const newFileName = `newfile.js`;
+      const newFile: FileNode = {
+        id: newFileId,
+        name: newFileName,
+        type: 'file',
+        language: 'javascript',
+        content: '// Add your code here\n'
+      };
+      
+      if (parentFolderId) {
+        // Add to specific folder
+        setFiles(prevFiles => addFileToFolder(prevFiles, parentFolderId, newFile));
+      } else {
+        // Add to root level
+        setFiles(prevFiles => [...prevFiles, newFile]);
+      }
+      
+      setSelectedFileId(newFileId);
+      setActiveTab('editor');
+      
+      toast({
+        title: "New File Created",
+        description: `${newFileName} has been created successfully.`,
+      });
+    };
+    
+    // For simplicity, we're creating at root level
+    createNewFile();
   };
+  
+  function addFileToFolder(nodes: FileNode[], folderId: string, newFile: FileNode): FileNode[] {
+    return nodes.map(node => {
+      if (node.id === folderId && node.type === 'folder') {
+        return {
+          ...node,
+          children: [...(node.children || []), newFile]
+        };
+      }
+      if (node.type === 'folder' && node.children) {
+        return {
+          ...node,
+          children: addFileToFolder(node.children, folderId, newFile)
+        };
+      }
+      return node;
+    });
+  }
 
   const handleDeleteFile = () => {
     if (!selectedFileId) return;
     
+    setFiles(prevFiles => removeFile(prevFiles, selectedFileId));
+    setSelectedFileId(null);
+    
     toast({
-      title: "Delete File",
-      description: "This feature would allow you to delete the selected file.",
+      title: "File Deleted",
+      description: "The selected file has been deleted.",
     });
   };
+  
+  function removeFile(nodes: FileNode[], id: string): FileNode[] {
+    return nodes.filter(node => {
+      if (node.id === id) {
+        return false;
+      }
+      if (node.type === 'folder' && node.children) {
+        node.children = removeFile(node.children, id);
+      }
+      return true;
+    });
+  }
 
   const handleSaveChanges = () => {
+    // In a real app, this would save to a backend
+    console.log('Saving changes to files:', files);
+    
     toast({
       title: "Changes Saved",
       description: "All changes have been saved successfully.",
@@ -370,11 +435,34 @@ Provide a prompt describing what you want to do with your codebase, and the agen
   };
 
   const handleRunCode = () => {
-    if (!selectedFileId) return;
+    if (!selectedFileId || !selectedFile) return;
+    
+    // Switch to terminal tab to show output
+    setActiveTab('terminal');
+    setOutputTab('terminal');
+    
+    // Execute appropriate command based on file type
+    const fileExtension = selectedFile.name.split('.').pop()?.toLowerCase();
+    
+    setTimeout(() => {
+      if (terminalRef.current) {
+        if (fileExtension === 'js' || fileExtension === 'jsx') {
+          terminalRef.current.executeCommand(`node ${selectedFile.name}`);
+        } else if (fileExtension === 'ts' || fileExtension === 'tsx') {
+          terminalRef.current.executeCommand(`ts-node ${selectedFile.name}`);
+        } else if (fileExtension === 'py') {
+          terminalRef.current.executeCommand(`python ${selectedFile.name}`);
+        } else if (fileExtension === 'html') {
+          terminalRef.current.executeCommand(`open ${selectedFile.name}`);
+        } else {
+          terminalRef.current.executeCommand(`run ${selectedFile.name}`);
+        }
+      }
+    }, 300);
     
     toast({
-      title: "Run Code",
-      description: "This feature would execute the selected file.",
+      title: "Running Code",
+      description: `Executing ${selectedFile.name}...`,
     });
   };
   
@@ -382,6 +470,22 @@ Provide a prompt describing what you want to do with your codebase, and the agen
     // In a real implementation, we would merge with existing files or replace them
     // For demo purposes, we'll just add them to the existing files
     setFiles(prevFiles => [...prevFiles, ...indexedFiles]);
+    
+    toast({
+      title: "Project Indexed",
+      description: `${indexedFiles.length} new files have been indexed.`,
+    });
+  };
+  
+  const handleChangeTab = (tab: string) => {
+    setActiveTab(tab);
+    
+    if (tab === 'terminal' && terminalRef.current) {
+      // Focus the terminal when switching to its tab
+      setTimeout(() => {
+        terminalRef.current?.focus();
+      }, 100);
+    }
   };
 
   return (
@@ -396,7 +500,7 @@ Provide a prompt describing what you want to do with your codebase, and the agen
       <main className="flex-1 flex overflow-hidden">
         <Sidebar
           activeTab={activeTab}
-          onChangeTab={setActiveTab}
+          onChangeTab={handleChangeTab}
           onNewFile={handleNewFile}
           onDeleteFile={handleDeleteFile}
           onSaveChanges={handleSaveChanges}
@@ -502,7 +606,7 @@ Provide a prompt describing what you want to do with your codebase, and the agen
             
             {activeTab === 'terminal' && (
               <div className="flex-1 overflow-hidden p-2">
-                <Terminal />
+                <Terminal ref={terminalRef} />
               </div>
             )}
           </div>
@@ -522,7 +626,7 @@ Provide a prompt describing what you want to do with your codebase, and the agen
               </TabsContent>
               
               <TabsContent value="terminal" className="flex-1 overflow-hidden p-2">
-                <Terminal />
+                <Terminal ref={terminalRef} />
               </TabsContent>
             </Tabs>
           </div>

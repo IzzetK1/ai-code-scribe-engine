@@ -1,5 +1,5 @@
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
 import { Terminal as XTerm } from 'xterm';
 import { FitAddon } from 'xterm-addon-fit';
 import { WebLinksAddon } from 'xterm-addon-web-links';
@@ -7,15 +7,108 @@ import 'xterm/css/xterm.css';
 import { Button } from '@/components/ui/button';
 import { Maximize, Minimize, Terminal as TerminalIcon } from 'lucide-react';
 
+export interface TerminalRef {
+  executeCommand: (command: string) => void;
+  clear: () => void;
+  focus: () => void;
+}
+
 interface TerminalProps {
   onResize?: () => void;
 }
 
-const Terminal: React.FC<TerminalProps> = ({ onResize }) => {
+const Terminal = forwardRef<TerminalRef, TerminalProps>(({ onResize }, ref) => {
   const terminalRef = useRef<HTMLDivElement>(null);
   const xtermRef = useRef<XTerm | null>(null);
   const fitAddonRef = useRef<FitAddon>(new FitAddon());
   const [isMaximized, setIsMaximized] = React.useState(false);
+  
+  // Expose methods to parent components
+  useImperativeHandle(ref, () => ({
+    executeCommand: (command: string) => {
+      if (xtermRef.current) {
+        xtermRef.current.writeln(`\r\n$ ${command}`);
+        processCommand(command);
+      }
+    },
+    clear: () => {
+      if (xtermRef.current) {
+        xtermRef.current.clear();
+      }
+    },
+    focus: () => {
+      if (xtermRef.current) {
+        xtermRef.current.focus();
+      }
+    }
+  }));
+  
+  const processCommand = (command: string) => {
+    if (!xtermRef.current) return;
+    
+    const trimmedCommand = command.trim();
+    
+    if (trimmedCommand === 'help') {
+      xtermRef.current.writeln('\r\nAvailable commands:');
+      xtermRef.current.writeln('  help     - Show this help message');
+      xtermRef.current.writeln('  clear    - Clear the terminal');
+      xtermRef.current.writeln('  version  - Show Ollama agent version');
+      xtermRef.current.writeln('  ls       - List files in current directory');
+      xtermRef.current.writeln('  echo     - Echo a message');
+      xtermRef.current.writeln('  run      - Run the current file');
+      xtermRef.current.writeln('  build    - Build the project');
+    } else if (trimmedCommand === 'clear') {
+      xtermRef.current.clear();
+    } else if (trimmedCommand === 'version') {
+      xtermRef.current.writeln('\r\nOllama Agent v1.0.0');
+    } else if (trimmedCommand === 'ls') {
+      xtermRef.current.writeln('\r\nsrc/');
+      xtermRef.current.writeln('config/');
+      xtermRef.current.writeln('README.md');
+    } else if (trimmedCommand === 'run') {
+      xtermRef.current.writeln('\r\nRunning current file...');
+      xtermRef.current.writeln('\r\n[INFO] Starting development server');
+      setTimeout(() => {
+        xtermRef.current?.writeln('\r\n[SUCCESS] Application running at http://localhost:3000');
+      }, 1500);
+    } else if (trimmedCommand === 'build') {
+      xtermRef.current.writeln('\r\nBuilding project...');
+      simulateBuild();
+    } else if (trimmedCommand.startsWith('echo ')) {
+      const message = trimmedCommand.slice(5);
+      xtermRef.current.writeln(`\r\n${message}`);
+    } else if (trimmedCommand !== '') {
+      xtermRef.current.writeln(`\r\nCommand not found: ${trimmedCommand}`);
+    }
+    
+    // Add a new prompt after command execution
+    setTimeout(() => {
+      if (xtermRef.current) {
+        xtermRef.current.write('\r\n$ ');
+      }
+    }, 100);
+  };
+  
+  const simulateBuild = () => {
+    if (!xtermRef.current) return;
+    
+    const steps = [
+      { message: '[1/4] Resolving dependencies...', delay: 800 },
+      { message: '[2/4] Compiling modules...', delay: 1500 },
+      { message: '[3/4] Optimizing and bundling...', delay: 2000 },
+      { message: '[4/4] Generating output files...', delay: 1200 },
+      { message: '[SUCCESS] Project built successfully! Output directory: ./dist', delay: 0 }
+    ];
+    
+    let totalDelay = 0;
+    
+    steps.forEach((step) => {
+      totalDelay += step.delay;
+      setTimeout(() => {
+        xtermRef.current?.writeln(`\r\n${step.message}`);
+      }, totalDelay);
+    });
+  };
   
   useEffect(() => {
     if (!terminalRef.current) return;
@@ -73,7 +166,6 @@ const Terminal: React.FC<TerminalProps> = ({ onResize }) => {
       if (domEvent.keyCode === 13) { // Enter key
         processCommand(currentLine);
         currentLine = '';
-        xterm.write('\r\n$ ');
       } else if (domEvent.keyCode === 8) { // Backspace
         if (currentLine.length > 0) {
           currentLine = currentLine.slice(0, -1);
@@ -84,32 +176,6 @@ const Terminal: React.FC<TerminalProps> = ({ onResize }) => {
         xterm.write(key);
       }
     });
-    
-    const processCommand = (command: string) => {
-      const trimmedCommand = command.trim();
-      
-      if (trimmedCommand === 'help') {
-        xterm.writeln('\r\nAvailable commands:');
-        xterm.writeln('  help     - Show this help message');
-        xterm.writeln('  clear    - Clear the terminal');
-        xterm.writeln('  version  - Show Ollama agent version');
-        xterm.writeln('  ls       - List files in current directory');
-        xterm.writeln('  echo     - Echo a message');
-      } else if (trimmedCommand === 'clear') {
-        xterm.clear();
-      } else if (trimmedCommand === 'version') {
-        xterm.writeln('\r\nOllama Agent v1.0.0');
-      } else if (trimmedCommand === 'ls') {
-        xterm.writeln('\r\nsrc/');
-        xterm.writeln('config/');
-        xterm.writeln('README.md');
-      } else if (trimmedCommand.startsWith('echo ')) {
-        const message = trimmedCommand.slice(5);
-        xterm.writeln(`\r\n${message}`);
-      } else if (trimmedCommand !== '') {
-        xterm.writeln(`\r\nCommand not found: ${trimmedCommand}`);
-      }
-    };
     
     // Handle window resize
     const handleResize = () => {
@@ -163,6 +229,8 @@ const Terminal: React.FC<TerminalProps> = ({ onResize }) => {
       <div ref={terminalRef} className="flex-1 overflow-hidden" />
     </div>
   );
-};
+});
+
+Terminal.displayName = "Terminal";
 
 export default Terminal;
