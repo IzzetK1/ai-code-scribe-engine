@@ -29,7 +29,7 @@ const Terminal: React.FC<TerminalProps> = ({ onResize }) => {
         foreground: '#f8f8f2',
         cursor: '#f8f8f2',
         cursorAccent: '#1a1d21',
-        selection: 'rgba(248, 248, 242, 0.3)',
+        // Removed 'selection' property as it's not in ITheme type
         black: '#21222C',
         red: '#FF5555',
         green: '#50FA7B',
